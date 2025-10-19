@@ -1,0 +1,20 @@
+{
+  "my_hand_region": {
+    "left": 337,
+    "top": 775,
+    "width": 241,
+    "height": 213
+  },
+  "board_region": {
+    "left": 206,
+    "top": 607,
+    "width": 415,
+    "height": 161
+  },
+  "amounts_region": {
+    "left": 377,
+    "top": 521,
+    "width": 293,
+    "height": 76
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "my_cards": [
+    "Ah",
+    "Tc"
+  ],
+  "board": [
+    "7h",
+    "2d",
+    "2s"
+  ],
+  "pot": null,
+  "to_call": null,
+  "stacks": {},
+  "equity": 0.12215000000000001,
+  "kelly": 0.0
+}

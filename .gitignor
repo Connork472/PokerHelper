@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+*.pyc
+*.onnx
+poker_vision/synth_data/
+.DS_Store
+state.json
+roi_config.json
+
