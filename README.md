@@ -1,146 +1,156 @@
 # PokerHelper
 
-A comprehensive poker card detection and win probability calculation tool.
+PokerHelper is a comprehensive toolkit for detecting Texas Hold'em cards from
+the screen and calculating live win probability.  The project couples a
+screen-capture pipeline ("Poker Vision") with a Monte Carlo simulator.  This
+release focuses on stability and approachability for everyday players—no data
+science background required.
 
-## Features
+## Key Features
 
-- **Poker Vision Detection**: Automatically detect cards from screen capture
-- **Manual Simulator**: Enter cards manually for win probability calculation
-- **Real-time Analysis**: Get equity and Kelly criterion calculations
-- **Clean GUI**: Easy-to-use interface for all features
+- **Accurate live detection** – Rank and suit models run via ONNX Runtime with
+  preprocessing that mirrors the synthetic training pipeline for consistent
+  reads.
+- **Temporal smoothing** – Rolling consensus per card slot suppresses one-frame
+  glitches and avoids stale cards lingering on screen.
+- **Built-in win probability** – Once your hole cards and board are known the
+  simulator automatically computes win %, tie %, and Kelly fraction.
+- **Actionable feedback** – Console + overlay instructions, suit legends,
+  confidences, and stability warnings keep you informed.
+- **Full telemetry** – Every frame is logged to `logs/detections.csv` (timestamp,
+  label, confidence, stability) so you can audit performance afterwards.
+
+## Installation
+
+1. Create/activate a Python 3.11 environment.
+2. Install dependencies:
+
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+   OpenCV requires GUI support (Tk/Qt) for window display.  On macOS install the
+   official Python.org build or ensure Homebrew Tcl/Tk is configured (see
+   Troubleshooting below).
 
 ## Quick Start
 
-1. Install dependencies:
+### 1. Select capture regions (one-time)
+
+Run the ROI selector and drag rectangles around your hole cards and the board.
+
 ```bash
-pip install -r requirements.txt
+python -m poker_vision.ui.roi_select
 ```
 
-2. Run the application (choose your interface):
+Controls: `h` hand, `b` board, `a` optional amounts, `s` save, `m` cycle monitor,
+`q` quit.  Keep rectangles tight around the cards for best accuracy.
+
+### 2. Launch the live detector
+
 ```bash
-python run.py
+python -m poker_vision.main_site_agnostic
 ```
 
-Or run directly:
-```bash
-# GUI Interface (Recommended)
-python main.py
+What you get:
 
-# Command Line Interface
-python cli_main.py
+- Console help with all hotkeys and win probability updates.
+- Optional overlay window showing cropped ROIs, card reads, confidences,
+  stability (⚠ marks unstable slots), and suit colour legend.
+- Continuous updates written to `output/state.json`:
+
+  ```json
+  {
+    "my_cards": ["As", "Kh"],
+    "board": ["7h", "2d", "2s"],
+    "pot": null,
+    "to_call": null,
+    "stacks": {},
+    "equity": 0.65,
+    "kelly": 0.30
+  }
+  ```
+
+### 3. Keys during live detection
+
+| Key | Action |
+| --- | ------ |
+| `q` / `Esc` | Quit |
+| `p` | Pause/resume capture |
+| `v` | Toggle overlay preview window (place it away from the ROIs to avoid self-capture) |
+| `n` | Toggle adaptive brightness normalisation (helps under glare or dim lighting) |
+| `r` | Reload `config/roi_config.json` without restarting |
+| `[` / `]` | Decrease/increase target FPS (2–4 fps recommended) |
+| `?` | Reprint help text in the console |
+
+### 4. Review detection logs
+
+After a session inspect `logs/detections.csv` for per-frame diagnostics.  Columns
+include raw label, combined confidence, probability margin, stabilised label,
+and whether the slot was considered stable.
+
+## Win Probability Integration
+
+The detector automatically calls the local CLI simulator when:
+
+- Both hole cards are confirmed (two different cards), and
+- The community board contains only unique cards (0–5 cards).
+
+Results appear in the console and overlay as soon as they are available and are
+also stored in `state.json` (`equity` + `kelly`).  Default simulator settings:
+6 players, 50,000 trials.  Adjust the constants in
+`src/poker_vision/main_site_agnostic.py` if you prefer different defaults.
+
+## Manual Entry Fallback
+
+Need to sanity-check odds or your screen capture is unavailable?  Use the manual
+CLI or GUI simulators:
+
+```bash
+python cli_main.py        # lightweight terminal workflow
+python simulator_gui.py   # form-based desktop app
 ```
 
-## Directory Structure
+Both tools accept card codes like `As Kh` or `10c 9d` and display win %, tie %,
+Kelly fraction, and confidence intervals.  You can keep the manual simulator
+open alongside the live detector for quick corrections.
+
+## Project Structure
 
 ```
 PokerHelper/
-├── main.py                 # Main application entry point
-├── poker_vision_detector.py  # GUI for card detection
-├── simulator_gui.py        # GUI for manual simulation
-├── src/                    # Source code
-│   ├── poker_vision/      # Card detection modules
-│   ├── simulator/         # Poker simulation modules
-│   └── gui/              # GUI components
-├── config/                # Configuration files
-│   ├── rank.onnx         # Rank detection model
-│   ├── suit.onnx         # Suit detection model
-│   └── roi_config.json   # Region configuration
-├── output/               # Output files
-│   ├── state.json        # Current game state
-│   ├── debug/           # Debug images
-│   └── images/          # Saved images
-└── requirements.txt     # Python dependencies
+├── README.md
+├── requirements.txt
+├── output/state.json
+├── logs/detections.csv        # created on first run
+├── config/roi_config.json     # ROI definition from the selector
+├── rank.onnx / suit.onnx      # ONNX models
+├── src/
+│   ├── poker_vision/          # Detection pipeline
+│   │   ├── main_site_agnostic.py
+│   │   ├── ui/roi_select.py
+│   │   ├── classify/infer_onnx_two.py
+│   │   └── ...
+│   └── simulator/
+│       └── poker_cli_session.py
+└── main.py / run.py / cli_main.py / simulator_gui.py
 ```
-
-## Usage
-
-### Poker Vision Detection
-1. Click "🎯 Poker Vision Detection"
-2. Press 'h' to select hand region
-3. Press 'b' to select board region
-4. Press 'd' to start detection
-5. Watch real-time card detection
-
-### Manual Simulator
-1. Click "🎲 Manual Simulator"
-2. Enter your hand (e.g., "As Kh")
-3. Enter board cards (e.g., "7h 2d 2s")
-4. Click "Calculate Win Probability"
-5. View detailed analysis
-
-## Controls
-
-### Poker Vision
-- **h**: Select hand region
-- **b**: Select board region
-- **d**: Start detection
-- **r**: Restart
-- **q**: Quit
-
-### Manual Simulator
-- Enter cards in standard format (e.g., "As Kh", "10c 9d")
-- Adjust players (2-10) and trials (1000-100000)
-- View equity, Kelly criterion, and confidence intervals
-
-## Output
-
-Results are saved to `output/state.json` with the following format:
-```json
-{
-  "my_cards": ["As", "Kh"],
-  "board": ["7h", "2d", "2s"],
-  "pot": null,
-  "to_call": null,
-  "stacks": {},
-  "equity": 0.65,
-  "kelly": 0.30
-}
-```
-
-## Requirements
-
-- Python 3.11+
-- OpenCV
-- MSS (screen capture)
-- ONNX Runtime
-- Tkinter (GUI)
-- Treys (poker evaluation)
-- NumPy
-- Pillow
 
 ## Troubleshooting
 
-- **Detection issues**: Try adjusting region selection or enabling debug mode
-- **Model errors**: Ensure rank.onnx and suit.onnx are in config/ directory
-- **GUI issues**: Check that all dependencies are installed
-- **Performance**: Reduce trial count for faster calculations
+- **Overlay captures itself (hall-of-mirrors):** Move the preview window to a
+  different screen or outside the selected ROIs.  You can also toggle it off via
+  `v` and rely on console output only.
+- **Model misreads:** Ensure the ROI tightly encloses the cards and experiment
+  with the `n` key (adaptive normalisation).  Check `logs/detections.csv` to
+  spot systematically low-confidence slots.
+- **`ModuleNotFoundError: _tkinter` on macOS:** Use the official Python.org
+  installer which bundles Tcl/Tk, or install Tcl/Tk via Homebrew and rebuild
+  Python (see the note at the end of the previous README revision).  You can
+  always fall back to CLI modes (`python cli_main.py`).
+- **Performance issues:** Use the `[` key to slow the capture loop (longer delay
+  between grabs) or reduce monitor resolution.
 
-### Fix: ModuleNotFoundError: No module named '_tkinter' (macOS)
-
-If running `python main.py` raises:
-ModuleNotFoundError: No module named '_tkinter'
-
-Quick workaround (no code changes needed)
-- Run the CLI entrypoint instead of the GUI:
-  - python cli_main.py
-  - or python run.py
-This will let you use PokerHelper immediately without Tkinter.
-
-Recommended fixes
-1) Use the official Python macOS installer (easiest)
-- Download and install Python from https://www.python.org/downloads/mac-osx/
-- This installer includes a working Tcl/Tk (Tkinter).
-
-2) Install Tcl/Tk via Homebrew and (re)build or reinstall Python (for Homebrew/pyenv users)
-- Install Tcl/Tk:
-  - brew install tcl-tk
-- Example with pyenv (Apple Silicon/Homebrew path shown):
-  - export LDFLAGS="-L/opt/homebrew/opt/tcl-tk/lib"
-  - export CPPFLAGS="-I/opt/homebrew/opt/tcl-tk/include"
-  - export PKG_CONFIG_PATH="/opt/homebrew/opt/tcl-tk/lib/pkgconfig"
-  - env LDFLAGS="$LDFLAGS" CPPFLAGS="$CPPFLAGS" pyenv install 3.11.14
-- After reinstall, recreate your virtualenv and reinstall requirements.
-
-Notes
-- If you installed Python via Homebrew, ensure your PATH picks up the Homebrew Python that links to tcl-tk.
-- If you prefer not to reinstall Python, use the CLI fallback above until you can update your Python build.
+Happy grinding!  If you capture an interesting log segment, share
+`logs/detections.csv` along with the corresponding screenshots so the models can
+be further tuned.
