@@ -27,8 +27,31 @@ class PokerHelperApp:
         self.style = ttk.Style()
         self.style.theme_use('clam')
         self.style.configure('Title.TLabel', font=('Arial', 16, 'bold'), background='#2c3e50', foreground='white')
-        self.style.configure('Button.TButton', font=('Arial', 12), padding=10)
         self.style.configure('Info.TLabel', font=('Arial', 10), background='#2c3e50', foreground='#ecf0f1')
+
+        # Button styling to improve visibility
+        button_base = {
+            'font': ('Arial', 12, 'bold'),
+            'padding': (16, 10),
+            'foreground': 'white',
+            'background': '#3498db',
+            'borderwidth': 0,
+            'relief': 'flat'
+        }
+        self.style.configure('TButton', **button_base)
+        self.style.configure('Button.TButton', **button_base)
+        button_state_map = {
+            'background': [
+                ('pressed', '#2471a3'),
+                ('active', '#2980b9'),
+                ('disabled', '#95a5a6')
+            ],
+            'foreground': [
+                ('disabled', '#ecf0f1')
+            ]
+        }
+        self.style.map('TButton', **button_state_map)
+        self.style.map('Button.TButton', **button_state_map)
         
         self.setup_ui()
         
