@@ -52,7 +52,8 @@ class SimulatorGUI:
         tk.Label(hand_frame, text="Your Hand (2 cards):", 
                 font=('Arial', 12, 'bold'), bg='#2c3e50', fg='#27ae60').pack(side='left')
         
-        self.hand_entry = tk.Entry(hand_frame, font=('Arial', 12), width=20)
+        self.hand_entry = tk.Entry(hand_frame, font=('Arial', 12), width=20,
+                                   fg='#00008b', insertbackground='#00008b')
         self.hand_entry.pack(side='left', padx=10)
         self.hand_entry.insert(0, "As Kh")
         
@@ -63,7 +64,8 @@ class SimulatorGUI:
         tk.Label(board_frame, text="Board Cards (0-5):", 
                 font=('Arial', 12, 'bold'), bg='#2c3e50', fg='#e74c3c').pack(side='left')
         
-        self.board_entry = tk.Entry(board_frame, font=('Arial', 12), width=30)
+        self.board_entry = tk.Entry(board_frame, font=('Arial', 12), width=30,
+                                    fg='#00008b', insertbackground='#00008b')
         self.board_entry.pack(side='left', padx=10)
         self.board_entry.insert(0, "7h 2d 2s")
         
@@ -99,14 +101,14 @@ class SimulatorGUI:
         controls_frame = tk.Frame(self.window, bg='#2c3e50')
         controls_frame.pack(pady=20)
         
-        self.calculate_btn = tk.Button(controls_frame, text="Calculate Win Probability", 
+        self.calculate_btn = tk.Button(controls_frame, text="Calculate Win Probability",
                                      command=self.calculate_probability, font=('Arial', 12),
-                                     bg='#3498db', fg='white', padx=20, pady=10)
+                                     bg='black', fg='white', padx=20, pady=10)
         self.calculate_btn.pack(side='left', padx=10)
         
-        self.clear_btn = tk.Button(controls_frame, text="Clear", 
+        self.clear_btn = tk.Button(controls_frame, text="Clear",
                                   command=self.clear_inputs, font=('Arial', 12),
-                                  bg='#f39c12', fg='white', padx=20, pady=10)
+                                  bg='black', fg='white', padx=20, pady=10)
         self.clear_btn.pack(side='left', padx=10)
         
         # Results frame
