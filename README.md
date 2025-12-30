@@ -11,45 +11,81 @@ A comprehensive poker card detection and win probability calculation tool.
 
 ## Quick Start
 
-1. Install dependencies:
+### One-Command Setup (Recommended)
+
+After cloning the repository, run:
+
+```bash
+./install.sh && ./start.sh
+```
+
+This will:
+- ✅ Create a virtual environment automatically
+- ✅ Install all dependencies (including treys, opencv, etc.)
+- ✅ Verify the installation
+- ✅ Launch the application
+
+**That's it!** No manual virtual environment activation or dependency management needed.
+
+### Manual Setup (Alternative)
+
+If you prefer to set up manually:
+
+1. Create and activate virtual environment:
+```bash
+python3 -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+```
+
+2. Install dependencies:
 ```bash
 pip install -r requirements.txt
 ```
 
-2. Run the application (choose your interface):
-```bash
-python run.py
-```
-
-Or run directly:
+3. Run the application:
 ```bash
 # GUI Interface (Recommended)
 python main.py
 
+# Or use the launcher menu
+python run.py
+
 # Command Line Interface
 python cli_main.py
+```
+
+### After Initial Setup
+
+Once installed, you can start the application anytime with:
+```bash
+./start.sh
 ```
 
 ## Directory Structure
 
 ```
 PokerHelper/
-├── main.py                 # Main application entry point
+├── install.sh            # Automated setup script
+├── start.sh              # Application launcher
+├── main.py               # Main application entry point
+├── run.py                # Launcher menu
 ├── poker_vision_detector.py  # GUI for card detection
-├── simulator_gui.py        # GUI for manual simulation
-├── src/                    # Source code
-│   ├── poker_vision/      # Card detection modules
-│   ├── simulator/         # Poker simulation modules
-│   └── gui/              # GUI components
-├── config/                # Configuration files
-│   ├── rank.onnx         # Rank detection model
-│   ├── suit.onnx         # Suit detection model
-│   └── roi_config.json   # Region configuration
-├── output/               # Output files
-│   ├── state.json        # Current game state
-│   ├── debug/           # Debug images
-│   └── images/          # Saved images
-└── requirements.txt     # Python dependencies
+├── simulator_gui.py      # GUI for manual simulation
+├── cli_main.py           # Command line interface
+├── src/                  # Source code
+│   ├── poker_vision/    # Card detection modules
+│   ├── simulator/       # Poker simulation modules
+│   └── gui/            # GUI components
+├── config/              # Configuration files
+│   ├── rank.onnx       # Rank detection model
+│   ├── suit.onnx       # Suit detection model
+│   └── roi_config.json # Region configuration
+├── output/             # Output files
+│   ├── state.json      # Current game state
+│   ├── debug/         # Debug images
+│   └── images/        # Saved images
+├── .venv/              # Virtual environment (created by install.sh)
+└── requirements.txt   # Python dependencies
 ```
 
 ## Usage
@@ -110,9 +146,21 @@ Results are saved to `output/state.json` with the following format:
 
 ## Troubleshooting
 
+### Setup Issues
+
+- **"Virtual environment not found"**: Run `./install.sh` first
+- **"Missing treys" or other import errors**: The install script should handle this, but if it persists, try:
+  ```bash
+  source .venv/bin/activate
+  pip install -r requirements.txt
+  ```
+- **macOS "externally managed" pip error**: The install script uses a virtual environment to avoid this. If you see this error, make sure you're using the virtual environment.
+
+### Application Issues
+
 - **Detection issues**: Try adjusting region selection or enabling debug mode
 - **Model errors**: Ensure rank.onnx and suit.onnx are in config/ directory
-- **GUI issues**: Check that all dependencies are installed
+- **GUI issues**: Check that all dependencies are installed and tkinter is available
 - **Performance**: Reduce trial count for faster calculations
 
 ### Fix: ModuleNotFoundError: No module named '_tkinter' (macOS)

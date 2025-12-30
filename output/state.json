@@ -1,7 +1,7 @@
 {
   "my_cards": [
-    "Ah",
-    "Tc"
+    "As",
+    "Kh"
   ],
   "board": [
     "7h",
@@ -11,6 +11,6 @@
   "pot": null,
   "to_call": null,
   "stacks": {},
-  "equity": 0.12215000000000001,
+  "equity": 0.15111,
   "kelly": 0.0
 }
