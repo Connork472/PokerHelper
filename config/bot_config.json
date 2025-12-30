@@ -1,0 +1,40 @@
+{
+  "play_style": "BALANCED",
+  "execution_mode": "SEMI_AUTO",
+  "num_simulations": 10000,
+  "bet_sizing": {
+    "preflop": {
+      "open_raise_bb": 2.5,
+      "open_raise_btn_bb": 2.2,
+      "three_bet_multiplier": 3.0,
+      "four_bet_multiplier": 2.2
+    },
+    "flop": {
+      "small": 0.33,
+      "medium": 0.5,
+      "large": 0.75,
+      "overbet": 1.0
+    },
+    "turn": {
+      "small": 0.5,
+      "medium": 0.66,
+      "large": 0.85,
+      "overbet": 1.25
+    },
+    "river": {
+      "small": 0.5,
+      "medium": 0.75,
+      "large": 1.0,
+      "overbet": 1.5
+    },
+    "all_in_spr_threshold": 2.0
+  },
+  "action_executor": {
+    "min_delay": 1.0,
+    "max_delay": 3.0,
+    "add_mouse_jitter": true,
+    "jitter_pixels": 5
+  },
+  "regions": {}
+}
+

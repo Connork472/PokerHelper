@@ -30,6 +30,9 @@ else:
     FONT_FAMILY = 'DejaVu Sans'
     FONT_MONO = 'DejaVu Sans Mono'
 
+# Fallback to system default if font not available
+# Note: We can't test fonts before Tk is initialized, so we'll handle this in configure_styles
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # COLOR PALETTE - Sophisticated dark poker theme
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -185,33 +188,86 @@ class CardDisplay(tk.Canvas):
 
 class PokerHelperApp:
     def __init__(self, root):
-        self.root = root
-        self.root.title("PokerHelper Pro")
-        self.root.geometry("900x700")
-        self.root.configure(bg=COLORS['bg_dark'])
-        self.root.resizable(True, True)
-        
-        # Center window on screen
-        self.center_window()
-        
-        # Configure ttk styles
-        self.configure_styles()
-        
-        self.setup_ui()
+        try:
+            self.root = root
+            self.root.title("PokerHelper Pro")
+            self.root.geometry("1100x700")
+            self.root.configure(bg=COLORS['bg_dark'])
+            self.root.resizable(True, True)
+            
+            # Configure ttk styles first
+            self.configure_styles()
+            
+            # Check window still exists after style configuration
+            if not self.root.winfo_exists():
+                raise RuntimeError("Window was destroyed during style configuration")
+            
+            # Setup UI before centering
+            self.setup_ui()
+            
+            # Check window still exists after UI setup
+            if not self.root.winfo_exists():
+                raise RuntimeError("Window was destroyed during UI setup")
+            
+            # Center window on screen after UI is set up
+            self.center_window()
+            
+            # Force initial update
+            if self.root.winfo_exists():
+                try:
+                    self.root.update_idletasks()
+                    self.root.update()
+                except tk.TclError as e:
+                    # Window was destroyed, can't update
+                    print(f"Warning: Could not update window: {e}")
+                    raise RuntimeError("Window was destroyed during update") from e
+        except Exception as e:
+            import traceback
+            error_msg = f"Error initializing application: {e}\n\n{traceback.format_exc()}"
+            print(error_msg)
+            # Only show error dialog if window still exists
+            try:
+                if self.root.winfo_exists():
+                    messagebox.showerror("Initialization Error", str(e))
+            except:
+                pass
+            # Don't raise - let the program continue if possible
+            # If window was destroyed, there's nothing we can do
         
     def center_window(self):
         """Center the window on screen"""
-        self.root.update_idletasks()
-        width = 900
-        height = 700
-        x = (self.root.winfo_screenwidth() // 2) - (width // 2)
-        y = (self.root.winfo_screenheight() // 2) - (height // 2)
-        self.root.geometry(f'{width}x{height}+{x}+{y}')
+        try:
+            # Check if window still exists
+            if not self.root.winfo_exists():
+                return
+            self.root.update_idletasks()
+            width = 1100
+            height = 700
+            x = (self.root.winfo_screenwidth() // 2) - (width // 2)
+            y = (self.root.winfo_screenheight() // 2) - (height // 2)
+            self.root.geometry(f'{width}x{height}+{x}+{y}')
+        except (tk.TclError, AttributeError) as e:
+            # Window was destroyed or doesn't exist
+            print(f"Warning: Could not center window: {e}")
+            return
+        except Exception as e:
+            # Other errors - try default geometry if window still exists
+            print(f"Warning: Could not center window: {e}")
+            try:
+                if self.root.winfo_exists():
+                    self.root.geometry('1100x700')
+            except:
+                pass
         
     def configure_styles(self):
         """Configure ttk widget styles"""
-        style = ttk.Style()
-        style.theme_use('clam')
+        try:
+            style = ttk.Style()
+            style.theme_use('clam')
+        except Exception as e:
+            print(f"Warning: Could not configure styles: {e}")
+            # Continue without custom styles
+            return
         
         # Configure various styles
         style.configure('TFrame', background=COLORS['bg_dark'])
@@ -239,146 +295,187 @@ class PokerHelperApp:
         
     def setup_ui(self):
         """Setup the main user interface"""
-        # Main container with padding
-        main_container = tk.Frame(self.root, bg=COLORS['bg_dark'])
-        main_container.pack(fill='both', expand=True, padx=40, pady=30)
+        # Check if window still exists before starting
+        if not self.root.winfo_exists():
+            raise RuntimeError("Window was destroyed before setup_ui could complete")
         
-        # ═══════════════════════════════════════════════════════════════════
-        # HEADER SECTION
-        # ═══════════════════════════════════════════════════════════════════
-        header_frame = tk.Frame(main_container, bg=COLORS['bg_dark'])
-        header_frame.pack(fill='x', pady=(0, 30))
-        
-        # Logo/Title area
-        title_area = tk.Frame(header_frame, bg=COLORS['bg_dark'])
-        title_area.pack()
-        
-        # Poker chip icon (using unicode)
-        icon_label = tk.Label(title_area, text="🎰", font=('', 48),
-                             bg=COLORS['bg_dark'])
-        icon_label.pack()
-        
-        # Main title
-        title_label = tk.Label(title_area, text="PokerHelper Pro",
-                              font=(FONT_FAMILY, 36, 'bold'),
-                              bg=COLORS['bg_dark'], fg=COLORS['text_primary'])
-        title_label.pack(pady=(10, 5))
-        
-        # Subtitle
-        subtitle_label = tk.Label(title_area, 
-                                 text="Real-time Card Detection & Win Probability Analysis",
-                                 font=(FONT_FAMILY, 14),
-                                 bg=COLORS['bg_dark'], fg=COLORS['text_secondary'])
-        subtitle_label.pack()
-        
-        # Divider line
-        divider = tk.Frame(main_container, height=1, bg=COLORS['border'])
-        divider.pack(fill='x', pady=20)
-        
-        # ═══════════════════════════════════════════════════════════════════
-        # MAIN ACTIONS SECTION
-        # ═══════════════════════════════════════════════════════════════════
-        actions_frame = tk.Frame(main_container, bg=COLORS['bg_dark'])
-        actions_frame.pack(fill='x', pady=20)
-        
-        # Feature cards container
-        cards_frame = tk.Frame(actions_frame, bg=COLORS['bg_dark'])
-        cards_frame.pack()
-        
-        # Poker Vision Card
-        vision_card = self.create_feature_card(
-            cards_frame,
-            icon="🎯",
-            title="Poker Vision",
-            description="Automatically detect cards from your screen in real-time",
-            button_text="Launch Vision",
-            button_color='green',
-            command=self.open_poker_vision
-        )
-        vision_card.pack(side='left', padx=15)
-        
-        # Manual Simulator Card
-        simulator_card = self.create_feature_card(
-            cards_frame,
-            icon="🎲",
-            title="Manual Simulator",
-            description="Enter cards manually to calculate win probability",
-            button_text="Open Simulator",
-            button_color='blue',
-            command=self.open_simulator
-        )
-        simulator_card.pack(side='left', padx=15)
-        
-        # Settings Card
-        settings_card = self.create_feature_card(
-            cards_frame,
-            icon="⚙️",
-            title="Settings",
-            description="Configure detection parameters and preferences",
-            button_text="Open Settings",
-            button_color='gold',
-            command=self.open_settings
-        )
-        settings_card.pack(side='left', padx=15)
-        
-        # ═══════════════════════════════════════════════════════════════════
-        # INFO SECTION
-        # ═══════════════════════════════════════════════════════════════════
-        info_frame = tk.Frame(main_container, bg=COLORS['bg_card'], 
-                             highlightbackground=COLORS['border'], highlightthickness=1)
-        info_frame.pack(fill='x', pady=30, ipady=20, ipadx=20)
-        
-        info_title = tk.Label(info_frame, text="Quick Start Guide",
-                             font=(FONT_FAMILY, 14, 'bold'),
-                             bg=COLORS['bg_card'], fg=COLORS['text_primary'])
-        info_title.pack(pady=(10, 15))
-        
-        steps = [
-            ("1", "Launch Poker Vision to auto-detect cards from your poker client"),
-            ("2", "Select the hand and board regions on your screen"),
-            ("3", "View real-time equity calculations as cards are detected"),
-        ]
-        
-        for num, text in steps:
-            step_frame = tk.Frame(info_frame, bg=COLORS['bg_card'])
-            step_frame.pack(fill='x', padx=20, pady=5)
+        try:
+            # Main container with padding
+            main_container = tk.Frame(self.root, bg=COLORS['bg_dark'])
+            main_container.pack(fill='both', expand=True, padx=40, pady=30)
             
-            num_label = tk.Label(step_frame, text=num, width=3,
-                                font=(FONT_FAMILY, 12, 'bold'),
-                                bg=COLORS['accent_blue'], fg=COLORS['text_primary'])
-            num_label.pack(side='left', padx=(0, 15))
+            # ═══════════════════════════════════════════════════════════════════
+            # HEADER SECTION
+            # ═══════════════════════════════════════════════════════════════════
+            header_frame = tk.Frame(main_container, bg=COLORS['bg_dark'])
+            header_frame.pack(fill='x', pady=(0, 30))
+        
+            # Logo/Title area
+            title_area = tk.Frame(header_frame, bg=COLORS['bg_dark'])
+            title_area.pack()
             
-            text_label = tk.Label(step_frame, text=text,
-                                 font=(FONT_FAMILY, 12),
-                                 bg=COLORS['bg_card'], fg=COLORS['text_secondary'])
-            text_label.pack(side='left')
-        
-        # ═══════════════════════════════════════════════════════════════════
-        # STATUS BAR
-        # ═══════════════════════════════════════════════════════════════════
-        status_frame = tk.Frame(main_container, bg=COLORS['bg_card'],
-                               highlightbackground=COLORS['border'], highlightthickness=1)
-        status_frame.pack(side='bottom', fill='x', pady=(20, 0))
-        
-        status_inner = tk.Frame(status_frame, bg=COLORS['bg_card'])
-        status_inner.pack(fill='x', padx=15, pady=10)
-        
-        # Status indicator
-        self.status_dot = tk.Label(status_inner, text="●", 
-                                  font=('', 10),
-                                  bg=COLORS['bg_card'], fg=COLORS['accent_green'])
-        self.status_dot.pack(side='left')
-        
-        self.status_label = tk.Label(status_inner, text="System Ready",
-                                    font=(FONT_FAMILY, 11),
-                                    bg=COLORS['bg_card'], fg=COLORS['text_secondary'])
-        self.status_label.pack(side='left', padx=(8, 0))
-        
-        # Version info
-        version_label = tk.Label(status_inner, text="v2.0",
-                                font=(FONT_FAMILY, 10),
-                                bg=COLORS['bg_card'], fg=COLORS['text_muted'])
-        version_label.pack(side='right')
+            # Poker chip icon (using unicode)
+            icon_label = tk.Label(title_area, text="🎰", font=('', 48),
+                                 bg=COLORS['bg_dark'])
+            icon_label.pack()
+            
+            # Main title
+            title_label = tk.Label(title_area, text="PokerHelper Pro",
+                                  font=(FONT_FAMILY, 36, 'bold'),
+                                  bg=COLORS['bg_dark'], fg=COLORS['text_primary'])
+            title_label.pack(pady=(10, 5))
+            
+            # Subtitle
+            subtitle_label = tk.Label(title_area, 
+                                     text="Real-time Card Detection & Win Probability Analysis",
+                                     font=(FONT_FAMILY, 14),
+                                     bg=COLORS['bg_dark'], fg=COLORS['text_secondary'])
+            subtitle_label.pack()
+            
+            # Divider line
+            divider = tk.Frame(main_container, height=1, bg=COLORS['border'])
+            divider.pack(fill='x', pady=20)
+            
+            # ═══════════════════════════════════════════════════════════════════
+            # MAIN ACTIONS SECTION
+            # ═══════════════════════════════════════════════════════════════════
+            actions_frame = tk.Frame(main_container, bg=COLORS['bg_dark'])
+            actions_frame.pack(fill='x', pady=20)
+            
+            # Feature cards container
+            cards_frame = tk.Frame(actions_frame, bg=COLORS['bg_dark'])
+            cards_frame.pack()
+            
+            # Poker Vision Card
+            vision_card = self.create_feature_card(
+                cards_frame,
+                icon="🎯",
+                title="Poker Vision",
+                description="Automatically detect cards from your screen in real-time",
+                button_text="Launch Vision",
+                button_color='green',
+                command=self.open_poker_vision
+            )
+            vision_card.pack(side='left', padx=15)
+            
+            # Manual Simulator Card
+            simulator_card = self.create_feature_card(
+                cards_frame,
+                icon="🎲",
+                title="Manual Simulator",
+                description="Enter cards manually to calculate win probability",
+                button_text="Open Simulator",
+                button_color='blue',
+                command=self.open_simulator
+            )
+            simulator_card.pack(side='left', padx=15)
+            
+            # Auto Bot Card
+            bot_card = self.create_feature_card(
+                cards_frame,
+                icon="🤖",
+                title="Auto Bot",
+                description="Automated poker assistant with configurable play styles",
+                button_text="Launch Bot",
+                button_color='purple',
+                command=self.open_poker_bot
+            )
+            bot_card.pack(side='left', padx=15)
+            
+            # Settings Card
+            settings_card = self.create_feature_card(
+                cards_frame,
+                icon="⚙️",
+                title="Settings",
+                description="Configure detection parameters and preferences",
+                button_text="Open Settings",
+                button_color='gold',
+                command=self.open_settings
+            )
+            settings_card.pack(side='left', padx=15)
+            
+            # ═══════════════════════════════════════════════════════════════════
+            # INFO SECTION
+            # ═══════════════════════════════════════════════════════════════════
+            info_frame = tk.Frame(main_container, bg=COLORS['bg_card'], 
+                                 highlightbackground=COLORS['border'], highlightthickness=1)
+            info_frame.pack(fill='x', pady=30, ipady=20, ipadx=20)
+            
+            info_title = tk.Label(info_frame, text="Quick Start Guide",
+                                 font=(FONT_FAMILY, 14, 'bold'),
+                                 bg=COLORS['bg_card'], fg=COLORS['text_primary'])
+            info_title.pack(pady=(10, 15))
+            
+            steps = [
+                ("1", "Launch Poker Vision to auto-detect cards from your poker client"),
+                ("2", "Select the hand and board regions on your screen"),
+                ("3", "View real-time equity calculations as cards are detected"),
+            ]
+            
+            for num, text in steps:
+                step_frame = tk.Frame(info_frame, bg=COLORS['bg_card'])
+                step_frame.pack(fill='x', padx=20, pady=5)
+                
+                num_label = tk.Label(step_frame, text=num, width=3,
+                                    font=(FONT_FAMILY, 12, 'bold'),
+                                    bg=COLORS['accent_blue'], fg=COLORS['text_primary'])
+                num_label.pack(side='left', padx=(0, 15))
+                
+                text_label = tk.Label(step_frame, text=text,
+                                     font=(FONT_FAMILY, 12),
+                                     bg=COLORS['bg_card'], fg=COLORS['text_secondary'])
+                text_label.pack(side='left')
+            
+            # ═══════════════════════════════════════════════════════════════════
+            # STATUS BAR
+            # ═══════════════════════════════════════════════════════════════════
+            status_frame = tk.Frame(main_container, bg=COLORS['bg_card'],
+                                   highlightbackground=COLORS['border'], highlightthickness=1)
+            status_frame.pack(side='bottom', fill='x', pady=(20, 0))
+            
+            status_inner = tk.Frame(status_frame, bg=COLORS['bg_card'])
+            status_inner.pack(fill='x', padx=15, pady=10)
+            
+            # Status indicator
+            self.status_dot = tk.Label(status_inner, text="●", 
+                                      font=('', 10),
+                                      bg=COLORS['bg_card'], fg=COLORS['accent_green'])
+            self.status_dot.pack(side='left')
+            
+            self.status_label = tk.Label(status_inner, text="System Ready",
+                                        font=(FONT_FAMILY, 11),
+                                        bg=COLORS['bg_card'], fg=COLORS['text_secondary'])
+            self.status_label.pack(side='left', padx=(8, 0))
+            
+            # Version info
+            version_label = tk.Label(status_inner, text="v2.0",
+                                    font=(FONT_FAMILY, 10),
+                                    bg=COLORS['bg_card'], fg=COLORS['text_muted'])
+            version_label.pack(side='right')
+            
+            # Force update to ensure widgets are displayed
+            if self.root.winfo_exists():
+                self.root.update_idletasks()
+                self.root.update()
+        except Exception as e:
+            import traceback
+            error_msg = f"Error setting up UI: {e}\n\n{traceback.format_exc()}"
+            print(error_msg)
+            # Create a simple error display if window still exists
+            try:
+                if self.root.winfo_exists():
+                    error_frame = tk.Frame(self.root, bg=COLORS['bg_dark'])
+                    error_frame.pack(fill='both', expand=True, padx=20, pady=20)
+                    error_label = tk.Label(error_frame, text=f"Error: {e}\n\nSee console for details", 
+                                         font=('TkDefaultFont', 12),
+                                         bg=COLORS['bg_dark'], fg=COLORS['accent_red'],
+                                         wraplength=1000, justify='left')
+                    error_label.pack()
+                    self.root.update()
+            except:
+                pass
+            # Re-raise the exception so __init__ can handle it
+            raise
         
     def create_feature_card(self, parent, icon, title, description, button_text, button_color, command):
         """Create a feature card widget"""
@@ -439,6 +536,16 @@ class PokerHelperApp:
         except Exception as e:
             messagebox.showerror("Error", f"Failed to open Simulator: {e}")
             self.update_status("Error launching Simulator", 'red')
+    
+    def open_poker_bot(self):
+        """Open the automated poker bot window"""
+        try:
+            from poker_bot_gui import PokerBotGUI
+            self.poker_bot_window = PokerBotGUI(self.root)
+            self.update_status("Poker Bot launched", 'green')
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to open Poker Bot: {e}")
+            self.update_status("Error launching Poker Bot", 'red')
             
     def open_settings(self):
         """Open settings window"""
@@ -566,17 +673,29 @@ class PokerHelperApp:
 
 
 def main():
-    root = tk.Tk()
-    
-    # Try to set window icon (if available)
     try:
-        # For macOS, we can't easily set icons, so we skip
-        pass
-    except:
-        pass
-    
-    app = PokerHelperApp(root)
-    root.mainloop()
+        root = tk.Tk()
+        
+        # Try to set window icon (if available)
+        try:
+            # For macOS, we can't easily set icons, so we skip
+            pass
+        except:
+            pass
+        
+        app = PokerHelperApp(root)
+        root.mainloop()
+    except Exception as e:
+        import traceback
+        error_msg = f"Fatal error: {e}\n\n{traceback.format_exc()}"
+        print(error_msg)
+        # Try to show error in a message box if possible
+        try:
+            import tkinter.messagebox as mb
+            mb.showerror("Fatal Error", error_msg)
+        except:
+            pass
+        raise
 
 
 if __name__ == "__main__":

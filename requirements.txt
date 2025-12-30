@@ -1,8 +1,12 @@
-opencv-python>=4.12.0
+opencv-python>=4.8.0,<4.12.0
 mss>=10.1.0
-numpy>=2.2.0
+numpy>=1.24.0,<2.0.0
 treys>=0.1.8
-pillow>=12.0.0
-scikit-learn>=1.7.0
-onnx>=1.19.0
+pillow>=11.0.0,<12.0.0
+scikit-learn>=1.6.0,<1.7.0
+onnx>=1.18.0,<1.19.0
 # onnxruntime>=1.18.0  # Optional - will use fallback if not available
+
+# Poker Bot dependencies
+pytesseract>=0.3.10    # OCR for button text and bet amounts
+pyautogui>=0.9.54      # Mouse/keyboard automation for bot actions
