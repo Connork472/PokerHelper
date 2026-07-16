@@ -1,6 +1,6 @@
 # PokerHelper
 
-A comprehensive poker card detection and win probability calculation tool.
+A comprehensive poker card detection and win probability calculation tool. The visual tool does not work lol, but the Monte Carlo Simulation runs very accurately.
 
 ## Features
 
